@@ -1,0 +1,15 @@
+/home/nevixity/Documents/AnyProjects/siv/bin/Debug/net7.0/Iv
+/home/nevixity/Documents/AnyProjects/siv/bin/Debug/net7.0/Iv.deps.json
+/home/nevixity/Documents/AnyProjects/siv/bin/Debug/net7.0/Iv.runtimeconfig.json
+/home/nevixity/Documents/AnyProjects/siv/bin/Debug/net7.0/Iv.dll
+/home/nevixity/Documents/AnyProjects/siv/bin/Debug/net7.0/Iv.pdb
+/home/nevixity/Documents/AnyProjects/siv/obj/Debug/net7.0/Iv.csproj.AssemblyReference.cache
+/home/nevixity/Documents/AnyProjects/siv/obj/Debug/net7.0/Iv.GeneratedMSBuildEditorConfig.editorconfig
+/home/nevixity/Documents/AnyProjects/siv/obj/Debug/net7.0/Iv.AssemblyInfoInputs.cache
+/home/nevixity/Documents/AnyProjects/siv/obj/Debug/net7.0/Iv.AssemblyInfo.cs
+/home/nevixity/Documents/AnyProjects/siv/obj/Debug/net7.0/Iv.csproj.CoreCompileInputs.cache
+/home/nevixity/Documents/AnyProjects/siv/obj/Debug/net7.0/Iv.dll
+/home/nevixity/Documents/AnyProjects/siv/obj/Debug/net7.0/refint/Iv.dll
+/home/nevixity/Documents/AnyProjects/siv/obj/Debug/net7.0/Iv.pdb
+/home/nevixity/Documents/AnyProjects/siv/obj/Debug/net7.0/Iv.genruntimeconfig.cache
+/home/nevixity/Documents/AnyProjects/siv/obj/Debug/net7.0/ref/Iv.dll
