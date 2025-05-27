@@ -1,4 +1,5 @@
 using System;
+using System.Text;
 
 namespace Iv.Components
 {
@@ -6,13 +7,16 @@ namespace Iv.Components
     {
         public Page()
         {
-            _lines = new List<string>();
+            _lines = new List<StringBuilder>()
+            {
+                new StringBuilder()
+            };
             _cursor = new Cursor();
             _title = "NewFile";
             _file_status = FileStatus.Unsaved;
         }
 
-        public List<string> _lines;
+        public List<StringBuilder> _lines;
         public Cursor _cursor;
         public FileStatus _file_status;
         public string _title;

@@ -7,6 +7,7 @@ public static class Iv_Main
 {
     public static void Main(string[] args)
     {
+        Console.Title = "Iv - Simple text editor";
         Console.Clear();
 
         if (args.Length == 0)
@@ -14,9 +15,7 @@ public static class Iv_Main
             Execute();
         }
         else
-        {
-
-        }
+        { }
     }
 
     public static void Execute()
