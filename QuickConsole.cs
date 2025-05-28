@@ -39,6 +39,27 @@ namespace Iv
                 Y = y;
             }
         }
+
+        [StructLayout(LayoutKind.Explicit)]
+        public struct CHAR_INFO {
+            [FieldOffset(0)] public char UnicodeChar;
+            [FieldOffset(2)] public ushort Attributes;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct SMALL_RECT {
+            public short Left, Top, Right, Bottom;
+        }
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        static extern bool WriteConsoleOutput(
+            IntPtr hConsoleOutput,
+            CHAR_INFO[] lpBuffer,
+            COORD dwBufferSize,
+            COORD dwBufferCoord,
+            ref SMALL_RECT lpWriteRegion);
+
+
         public static void FastWrite(string _text, Cursor _cursor)
         {
             IntPtr hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -61,6 +82,35 @@ namespace Iv
             }
 
             WriteConsoleOutputAttribute(hConsole, attrs, (uint)attrs.Length, coord, out _);
-        } 
+        }
+
+        public static void FastDrawLine(int y, string text, ConsoleColor background_color, ConsoleColor foreground_color)
+        {
+            int width = Console.WindowWidth;
+            string padded = text.PadRight(width, ' ');
+
+            var buffer = new CHAR_INFO[width];
+            ushort attr = (ushort)((int)foreground_color | ((int)background_color << 4));
+            for (int i = 0; i < width; i++)
+            {
+                buffer[i].UnicodeChar = padded[i];
+                buffer[i].Attributes  = attr;
+            }
+
+            IntPtr hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+            var bufSize   = new COORD((short)width, 1);
+            var bufCoord  = new COORD(0, 0);
+            var writeRect = new SMALL_RECT
+            {
+                Left   = 0,
+                Top    = (short)y,
+                Right  = (short)(width - 1),
+                Bottom = (short)y
+            };
+
+            WriteConsoleOutput(hConsole, buffer, bufSize, bufCoord, ref writeRect);
+        }
+
+        public static void FastClear(int y) { FastWrite(new string(' ', Console.WindowWidth), new Cursor { X = 0, Y = (short)y }); }
     }
 }
