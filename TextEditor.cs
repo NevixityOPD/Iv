@@ -7,8 +7,11 @@ namespace Iv
     {
         //Threads
         private Thread _top_bar;
+        private bool _render_top_bar = true;
         private Thread _bottom_bar;
+        private bool _render_bottom_bar = true;
         private Thread _update_text;
+        private bool _render_page = true;
 
         private Page _file_page;
         private KeyboardState _keyboardState = KeyboardState.Normal;
@@ -41,32 +44,41 @@ namespace Iv
             _file_page = new Page();
 
             //Calculates variables
-            page_heigth = (Console.WindowHeight - 1) - (top_padding + bottom_padding);
+            page_heigth = Console.WindowHeight - 1 - (top_padding + bottom_padding);
 
             Console.Title = $"Iv - {_file_page._title}";
 
-            //Top bar
-            Console.SetCursorPosition(0, 0);
-            Console.BackgroundColor = ConsoleColor.White;
-            Console.Write(new string(' ', Console.WindowWidth));
-            Console.ResetColor();
-
-            //Bottom bar
-            Console.SetCursorPosition(0, Console.WindowHeight - 1);
-            Console.BackgroundColor = ConsoleColor.White;
-            Console.Write(new string(' ', Console.WindowWidth));
-            Console.ResetColor();
+            DrawTopBar();
+            DrawTopBar();
+            
             Console.SetCursorPosition(0, 1);
 
             _update_text.Start();
             MainEditor();
         }
 
+        private void DrawBottomBar()
+        {
+            Console.SetCursorPosition(0, Console.WindowHeight - 1);
+            Console.BackgroundColor = ConsoleColor.White;
+            Console.Write(new string(' ', Console.WindowWidth));
+            Console.ResetColor();
+        }
+
+        private void DrawTopBar()
+        {
+            Console.SetCursorPosition(0, 0);
+            Console.BackgroundColor = ConsoleColor.White;
+            Console.Write(new string(' ', Console.WindowWidth));
+            Console.ResetColor();
+        }
+
+
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "CA1416:Validate platform compatibility", Justification = "<Pending>")]
         private void UpdateTopBar()
         {
             string text = $"Iv | {DateTime.Now:HH:mm:ss} | Editing file \"{_file_page._title}\" | ";
-            while (true)
+            while (_render_top_bar)
             {
                 text = $" Iv | {DateTime.Now:HH:mm:ss} | Editing file \"{_file_page._title}\" | ";
                 QuickConsole.FastWrite_Color(text, new Cursor() { X = 0, Y = 0 }, ConsoleColor.White, ConsoleColor.Black);
@@ -97,7 +109,7 @@ namespace Iv
 
         private void UpdateBottomBar()
         {
-            while (true)
+            while (_render_bottom_bar)
             {
                 QuickConsole.FastDrawLine(Console.WindowHeight - 1, $" [{_keyboardState}]", ConsoleColor.White, (_keyboardState == KeyboardState.Normal) ? ConsoleColor.DarkGreen : ConsoleColor.DarkYellow);
                 QuickConsole.FastWrite_Color($"Ln {_file_page._cursor.X} Col {_file_page._cursor.Y} Ph {page_heigth} Lp {line_padding} ", new Cursor() { X = (short)(Console.WindowWidth - $"Ln {_file_page._cursor.X} Col {_file_page._cursor.Y} Ph {page_heigth} Lp {line_padding} ".Length), Y = (short)(Console.WindowHeight - 1), }, ConsoleColor.White, ConsoleColor.Black);
@@ -107,7 +119,7 @@ namespace Iv
 
         private void UpdateText()
         {
-            while (true)
+            while (_render_page)
             {
                 List<StringBuilder> _lines;
                 //Checks if total lines is more than screen height
@@ -164,23 +176,29 @@ namespace Iv
 
                 if (_key.Key == ConsoleKey.Enter)
                 {
-                    _file_page._lines.Add(new StringBuilder());
-                    _file_page._cursor.Y++;
-                    if (_file_page._lines[_file_page._cursor.Y].Length != 0)
+                    if (_keyboardState != KeyboardState.Command || _keyboardState != KeyboardState.Readonly)
                     {
-                        _file_page._cursor.X = (short)_file_page._lines[_file_page._cursor.Y].Length;
-                    }
-                    else
-                    {
-                        _file_page._cursor.X = 0;
+                        _file_page._lines.Add(new StringBuilder());
+                        _file_page._cursor.Y++;
+                        if (_file_page._lines[_file_page._cursor.Y].Length != 0)
+                        {
+                            _file_page._cursor.X = (short)_file_page._lines[_file_page._cursor.Y].Length;
+                        }
+                        else
+                        {
+                            _file_page._cursor.X = 0;
+                        }
                     }
                 }
                 else if (_key.Key == ConsoleKey.Backspace)
                 {
-                    if (_file_page._cursor.X != 0)
+                    if (_keyboardState != KeyboardState.Command || _keyboardState != KeyboardState.Readonly)
                     {
-                        _file_page._lines[_file_page._cursor.Y].Remove(_file_page._cursor.X - 1, 1);
-                        _file_page._cursor.X--;
+                        if (_file_page._cursor.X != 0)
+                        {
+                            _file_page._lines[_file_page._cursor.Y].Remove(_file_page._cursor.X - 1, 1);
+                            _file_page._cursor.X--;
+                        }
                     }
                 }
                 else if (_key.Key == ConsoleKey.LeftArrow)
@@ -218,13 +236,32 @@ namespace Iv
                     if (_keyboardState == KeyboardState.Normal) { _keyboardState = KeyboardState.Readonly; }
                     else if (_keyboardState == KeyboardState.Readonly) { _keyboardState = KeyboardState.Normal; }
                 }
+                else if (_key.Key == ConsoleKey.Escape)
+                {
+                    KeyboardState _prev_state = _keyboardState;
+
+                    _keyboardState = KeyboardState.Command;
+
+                    _render_bottom_bar = false;
+                    _render_page = false;
+                    DrawBottomBar();
+
+                    QuickConsole.FastWrite_Color("> ", new Cursor()
+                    {
+                        X = 0,
+                        Y = (short)(Console.WindowHeight - 1),
+                    }, ConsoleColor.White, ConsoleColor.Black);
+                    Console.SetCursorPosition(2, Console.WindowHeight - 1);
+
+                    
+                }
                 else
                 {
-                    if (_keyboardState == KeyboardState.Normal)
+                    if (_keyboardState != KeyboardState.Command || _keyboardState != KeyboardState.Readonly)
                     {
                         if (_file_page._lines[_file_page._cursor.Y].Length >= line_length)
                         {
-                            _file_page._lines.Insert(_file_page._cursor.Y, new StringBuilder());
+                            _file_page._lines.Add(new StringBuilder());
                             _file_page._cursor.X = 0;
                             _file_page._cursor.Y++;
                             _file_page._lines[_file_page._cursor.Y].Insert(_file_page._cursor.X, _key.KeyChar);
