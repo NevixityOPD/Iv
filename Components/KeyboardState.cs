@@ -4,6 +4,5 @@ namespace Iv.Components
     {
         Normal,
         Readonly,
-        Command
     }
 }

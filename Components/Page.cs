@@ -14,11 +14,13 @@ namespace Iv.Components
             _cursor = new Cursor();
             _title = "NewFile";
             _file_status = FileStatus.Unsaved;
+            _directory = "";
         }
 
         public List<StringBuilder> _lines;
         public Cursor _cursor;
         public FileStatus _file_status;
         public string _title;
+        public string _directory;
     }
 }

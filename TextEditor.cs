@@ -7,14 +7,14 @@ namespace Iv
     {
         //Threads
         private Thread _top_bar;
-        private bool _render_top_bar = true;
+        private ManualResetEvent _render_top_bar;
         private Thread _bottom_bar;
-        private bool _render_bottom_bar = true;
+        private ManualResetEvent _render_bottom_bar;
         private Thread _update_text;
-        private bool _render_page = true;
+        private ManualResetEvent _render_page;
 
-        private Page _file_page;
-        private KeyboardState _keyboardState = KeyboardState.Normal;
+        public Page _file_page;
+        public KeyboardState _keyboardState = KeyboardState.Normal;
 
         //Padding
         private int left_padding = 2;
@@ -22,8 +22,6 @@ namespace Iv
         private int bottom_padding = 1;
 
         //Limits
-        private int page_starts = 1;
-        private int page_ends = Console.WindowHeight - 2;
         private int page_heigth;
         private int line_length = Console.WindowWidth - 2;
 
@@ -37,6 +35,10 @@ namespace Iv
             _top_bar = new Thread(UpdateTopBar);
             _bottom_bar = new Thread(UpdateBottomBar);
             _update_text = new Thread(UpdateText);
+
+            _render_top_bar = new ManualResetEvent(true);
+            _render_bottom_bar = new ManualResetEvent(true);
+            _render_page = new ManualResetEvent(true);
 
             _top_bar.Start();
             _bottom_bar.Start();
@@ -78,8 +80,9 @@ namespace Iv
         private void UpdateTopBar()
         {
             string text = $"Iv | {DateTime.Now:HH:mm:ss} | Editing file \"{_file_page._title}\" | ";
-            while (_render_top_bar)
+            while (true)
             {
+                _render_top_bar.WaitOne();
                 text = $" Iv | {DateTime.Now:HH:mm:ss} | Editing file \"{_file_page._title}\" | ";
                 QuickConsole.FastWrite_Color(text, new Cursor() { X = 0, Y = 0 }, ConsoleColor.White, ConsoleColor.Black);
                 if (_file_page._file_status == FileStatus.Unsaved)
@@ -109,8 +112,9 @@ namespace Iv
 
         private void UpdateBottomBar()
         {
-            while (_render_bottom_bar)
+            while (true)
             {
+                _render_bottom_bar.WaitOne();
                 QuickConsole.FastDrawLine(Console.WindowHeight - 1, $" [{_keyboardState}]", ConsoleColor.White, (_keyboardState == KeyboardState.Normal) ? ConsoleColor.DarkGreen : ConsoleColor.DarkYellow);
                 QuickConsole.FastWrite_Color($"Ln {_file_page._cursor.X} Col {_file_page._cursor.Y} Ph {page_heigth} Lp {line_padding} ", new Cursor() { X = (short)(Console.WindowWidth - $"Ln {_file_page._cursor.X} Col {_file_page._cursor.Y} Ph {page_heigth} Lp {line_padding} ".Length), Y = (short)(Console.WindowHeight - 1), }, ConsoleColor.White, ConsoleColor.Black);
                 Thread.Sleep(20);
@@ -119,8 +123,9 @@ namespace Iv
 
         private void UpdateText()
         {
-            while (_render_page)
+            while (true)
             {
+                _render_page.WaitOne();
                 List<StringBuilder> _lines;
                 //Checks if total lines is more than screen height
                 if (_file_page._cursor.Y > page_heigth)
@@ -176,7 +181,7 @@ namespace Iv
 
                 if (_key.Key == ConsoleKey.Enter)
                 {
-                    if (_keyboardState != KeyboardState.Command || _keyboardState != KeyboardState.Readonly)
+                    if (_keyboardState != KeyboardState.Readonly)
                     {
                         _file_page._lines.Add(new StringBuilder());
                         _file_page._cursor.Y++;
@@ -192,7 +197,7 @@ namespace Iv
                 }
                 else if (_key.Key == ConsoleKey.Backspace)
                 {
-                    if (_keyboardState != KeyboardState.Command || _keyboardState != KeyboardState.Readonly)
+                    if (_keyboardState != KeyboardState.Readonly)
                     {
                         if (_file_page._cursor.X != 0)
                         {
@@ -238,26 +243,68 @@ namespace Iv
                 }
                 else if (_key.Key == ConsoleKey.Escape)
                 {
-                    KeyboardState _prev_state = _keyboardState;
-
-                    _keyboardState = KeyboardState.Command;
-
-                    _render_bottom_bar = false;
-                    _render_page = false;
+                    _render_bottom_bar.Reset();
+                    _render_page.Reset();
                     DrawBottomBar();
 
-                    QuickConsole.FastWrite_Color("> ", new Cursor()
+                    if (_file_page._file_status == FileStatus.Unsaved)
                     {
-                        X = 0,
-                        Y = (short)(Console.WindowHeight - 1),
-                    }, ConsoleColor.White, ConsoleColor.Black);
-                    Console.SetCursorPosition(2, Console.WindowHeight - 1);
+                        QuickConsole.FastWrite_Color("File is unsaved. Are you sure you want to quit?[Y/N]: ", new Cursor()
+                        {
+                            X = 0,
+                            Y = (short)(Console.WindowHeight - 1),
+                        }, ConsoleColor.White, ConsoleColor.Black);
 
-                    
+                        ConsoleKeyInfo _console_key = Console.ReadKey(true);
+
+                        if (_console_key.Key == ConsoleKey.Y)
+                        {
+                            _render_bottom_bar.Reset();
+                            _render_page.Reset();
+                            _render_top_bar.Reset();
+                            Console.Clear();
+                            Environment.Exit(0);
+                        }
+                        else
+                        {
+                            DrawBottomBar();
+                            _render_bottom_bar.Set();
+                            _render_page.Set();
+                        }
+                    }
+                    else
+                    {
+                        QuickConsole.FastWrite_Color("Are you sure you want to quit?[Y/N]: ", new Cursor()
+                        {
+                            X = 0,
+                            Y = (short)(Console.WindowHeight - 1),
+                        }, ConsoleColor.White, ConsoleColor.Black);
+
+                        ConsoleKeyInfo _console_key = Console.ReadKey(true);
+
+                        if (_console_key.Key == ConsoleKey.Y)
+                        {
+                            Console.Clear();
+                            Environment.Exit(0);
+                        }
+                        else
+                        {
+                            DrawBottomBar();
+                            _render_bottom_bar.Set();
+                            _render_page.Set();
+                        }
+                    }
+                }
+                else if ((_key.Modifiers == ConsoleModifiers.Control) && _key.Key == ConsoleKey.S)
+                {
+                    if (string.IsNullOrEmpty(_file_page._directory) || string.IsNullOrWhiteSpace(_file_page._directory))
+                    {
+                        
+                    }
                 }
                 else
                 {
-                    if (_keyboardState != KeyboardState.Command || _keyboardState != KeyboardState.Readonly)
+                    if (_keyboardState != KeyboardState.Readonly)
                     {
                         if (_file_page._lines[_file_page._cursor.Y].Length >= line_length)
                         {
