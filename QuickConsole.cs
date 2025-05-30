@@ -1,5 +1,5 @@
-using System;
 using System.Runtime.InteropServices;
+using System.Text;
 using Iv.Components;
 
 namespace Iv
@@ -109,6 +109,63 @@ namespace Iv
             };
 
             WriteConsoleOutput(hConsole, buffer, bufSize, bufCoord, ref writeRect);
+        }
+
+        public static string FastReadLine(Cursor _cursor, ConsoleColor background, ConsoleColor foreground, string _text_preset = "", int _char_limit = 12)
+        {
+            StringBuilder _string = new StringBuilder(_text_preset);
+            ConsoleKeyInfo _key;
+
+            if (_text_preset.Length > _char_limit)
+            {
+                throw new Exception("Preset text length is longer than it supposed to be!");
+            }
+
+            if (_char_limit == 0) { _char_limit = 12; }
+
+            if (!string.IsNullOrEmpty(_text_preset) || !string.IsNullOrWhiteSpace(_text_preset))
+                {
+                    FastWrite_Color(_text_preset, new Cursor()
+                    {
+                        X = _cursor.X,
+                        Y = _cursor.Y,
+                    }, background, foreground);
+                }
+
+            Console.SetCursorPosition(_cursor.X + _string.Length, _cursor.Y);
+
+            while (true)
+            {
+                _key = Console.ReadKey(true);
+
+                if (_key.Key == ConsoleKey.Enter)
+                {
+                    Console.ResetColor();
+                    break;
+                }
+                else if (_key.Key == ConsoleKey.Backspace && _string.Length != 0)
+                {
+                    FastWrite_Color(" ", new Cursor()
+                    {
+                        X = (short)(_cursor.X + _string.Length - 1),
+                        Y = _cursor.Y,
+                    }, background, foreground);
+                    _string.Length--;
+                }
+                else if (!char.IsControl(_key.KeyChar) && _string.Length != _char_limit)
+                {
+                    _string.Append(_key.KeyChar);
+                    FastWrite_Color(_key.KeyChar.ToString(), new Cursor()
+                    {
+                        X = (short)(_cursor.X + _string.Length - 1),
+                        Y = _cursor.Y,
+                    }, background, foreground);
+                }
+
+                Console.SetCursorPosition(_cursor.X + _string.Length, _cursor.Y);
+            }
+
+            return _string.ToString();
         }
 
         public static void FastClear(int y) { FastWrite(new string(' ', Console.WindowWidth), new Cursor { X = 0, Y = (short)y }); }

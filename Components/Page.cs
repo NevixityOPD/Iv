@@ -12,7 +12,7 @@ namespace Iv.Components
                 new StringBuilder()
             };
             _cursor = new Cursor();
-            _title = "NewFile";
+            _title = "NewFile.txt";
             _file_status = FileStatus.Unsaved;
             _directory = "";
         }
