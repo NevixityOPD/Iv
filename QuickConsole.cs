@@ -41,13 +41,15 @@ namespace Iv
         }
 
         [StructLayout(LayoutKind.Explicit)]
-        public struct CHAR_INFO {
+        public struct CHAR_INFO
+        {
             [FieldOffset(0)] public char UnicodeChar;
             [FieldOffset(2)] public ushort Attributes;
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        public struct SMALL_RECT {
+        public struct SMALL_RECT
+        {
             public short Left, Top, Right, Bottom;
         }
 
@@ -94,17 +96,17 @@ namespace Iv
             for (int i = 0; i < width; i++)
             {
                 buffer[i].UnicodeChar = padded[i];
-                buffer[i].Attributes  = attr;
+                buffer[i].Attributes = attr;
             }
 
             IntPtr hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-            var bufSize   = new COORD((short)width, 1);
-            var bufCoord  = new COORD(0, 0);
+            var bufSize = new COORD((short)width, 1);
+            var bufCoord = new COORD(0, 0);
             var writeRect = new SMALL_RECT
             {
-                Left   = 0,
-                Top    = (short)y,
-                Right  = (short)(width - 1),
+                Left = 0,
+                Top = (short)y,
+                Right = (short)(width - 1),
                 Bottom = (short)y
             };
 
@@ -124,13 +126,13 @@ namespace Iv
             if (_char_limit == 0) { _char_limit = 12; }
 
             if (!string.IsNullOrEmpty(_text_preset) || !string.IsNullOrWhiteSpace(_text_preset))
+            {
+                FastWrite_Color(_text_preset, new Cursor()
                 {
-                    FastWrite_Color(_text_preset, new Cursor()
-                    {
-                        X = _cursor.X,
-                        Y = _cursor.Y,
-                    }, background, foreground);
-                }
+                    X = _cursor.X,
+                    Y = _cursor.Y,
+                }, background, foreground);
+            }
 
             Console.SetCursorPosition(_cursor.X + _string.Length, _cursor.Y);
 
@@ -169,5 +171,24 @@ namespace Iv
         }
 
         public static void FastClear(int y) { FastWrite(new string(' ', Console.WindowWidth), new Cursor { X = 0, Y = (short)y }); }
+
+        [DllImport("user32.dll")]
+        private static extern short GetAsyncKeyState(int vKey);
+
+        private const int VK_LEFT = 0x25;
+        private const int VK_RIGHT = 0x27;
+        private const int VK_CONTROL = 0x11;
+
+        public static bool IsCtrlLeftArrowPressed()
+        {
+            return (GetAsyncKeyState(VK_LEFT) & 0x8000) != 0 &&
+                   (GetAsyncKeyState(VK_CONTROL) & 0x8000) != 0;
+        }
+        
+        public static bool IsCtrlRightArrowPressed()
+        {
+            return (GetAsyncKeyState(VK_RIGHT) & 0x8000) != 0 &&
+                   (GetAsyncKeyState(VK_CONTROL) & 0x8000) != 0;
+        }
     }
 }

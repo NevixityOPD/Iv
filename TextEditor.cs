@@ -1,3 +1,5 @@
+using System;
+using System.Linq;
 using System.Text;
 using Iv.Components;
 
@@ -29,6 +31,7 @@ namespace Iv
 
         //Variables
         public int line_padding = 0;
+        public char[] _delimiters = new char[] { ' ', '/', '\\', '(', ')', '"', '\'', '-', '.', ',', ':', ';', '<', '>', '~', '!', '@', '#', '$', '%', '^', '&', '*', '|', '+', '=', '[', ']', '{', '}', '|', '?' };
 
         public TextEditor()
         {
@@ -49,7 +52,7 @@ namespace Iv
             page_heigth = Console.WindowHeight - 1 - (top_padding + bottom_padding);
 
             Console.Title = $"Iv - {_file_page._title}";
-            
+
             Console.SetCursorPosition(0, 1);
 
             _update_text.Start();
@@ -67,6 +70,19 @@ namespace Iv
                     _sr.WriteLine(i.ToString());
                 }
             }
+        }
+
+        public bool CheckForDelimiters(char _char)
+        {
+            foreach (var i in _delimiters)
+            {
+                if (_char == i)
+                {
+                    return true;
+                }    
+            }
+
+            return false;
         }
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -127,6 +143,39 @@ namespace Iv
         {
             while (true)
             {
+                if (QuickConsole.IsCtrlLeftArrowPressed())
+                {
+                    if (_file_page._cursor.X == 0 && _file_page._cursor.Y != 0)
+                    {
+                        _file_page._cursor.Y--;
+                        _file_page._cursor.X = (short)_file_page._lines[_file_page._cursor.Y].Length;
+                    }
+                    else if (_file_page._cursor.X != 0)
+                    {
+                        _file_page._cursor.X--;
+                        while (!CheckForDelimiters(_file_page._lines[_file_page._cursor.Y][_file_page._cursor.X]) && _file_page._cursor.X != 0)
+                        {
+                            _file_page._cursor.X--;
+                        }
+                    }
+                }
+                else if (QuickConsole.IsCtrlRightArrowPressed())
+                {
+                    if (_file_page._cursor.X == _file_page._lines[_file_page._cursor.Y].Length && _file_page._lines.Count > _file_page._cursor.Y + 1)
+                    {
+                        _file_page._cursor.Y++;
+                        _file_page._cursor.X = 0;
+                    }
+                    else if (_file_page._cursor.X != _file_page._lines[_file_page._cursor.Y].Length)
+                    {
+                        _file_page._cursor.X++;
+                        while (_file_page._cursor.X != _file_page._lines[_file_page._cursor.Y].Length && !CheckForDelimiters(_file_page._lines[_file_page._cursor.Y][_file_page._cursor.X]))
+                        {
+                            _file_page._cursor.X++;
+                        }
+                    }
+                }
+
                 ConsoleKeyInfo _key = Console.ReadKey(true);
 
                 if (_key.Key == ConsoleKey.Enter)
@@ -146,9 +195,9 @@ namespace Iv
                         }
                     }
                 }
-                else if (_key.Key == ConsoleKey.Backspace && _file_page._cursor.X != 0)
+                else if (_key.Key == ConsoleKey.Backspace)
                 {
-                    if (_keyboardState != KeyboardState.Readonly)
+                    if (_keyboardState != KeyboardState.Readonly && _file_page._cursor.X != 0)
                     {
                         _file_page._file_status = FileStatus.Unsaved;
                         _file_page._lines[_file_page._cursor.Y].Remove(_file_page._cursor.X - 1, 1);
@@ -157,14 +206,24 @@ namespace Iv
                 }
                 else if (_key.Key == ConsoleKey.LeftArrow)
                 {
-                    if (_file_page._cursor.X != 0)
+                    if (_file_page._cursor.X == 0 && _file_page._cursor.Y != 0)
+                    {
+                        _file_page._cursor.Y--;
+                        _file_page._cursor.X = (short)_file_page._lines[_file_page._cursor.Y].Length;
+                    }
+                    else if (_file_page._cursor.X != 0)
                     {
                         _file_page._cursor.X--;
                     }
                 }
                 else if (_key.Key == ConsoleKey.RightArrow)
                 {
-                    if (_file_page._cursor.X != _file_page._lines[_file_page._cursor.Y].Length)
+                    if (_file_page._cursor.X == _file_page._lines[_file_page._cursor.Y].Length && _file_page._lines.Count > _file_page._cursor.Y + 1)
+                    {
+                        _file_page._cursor.Y++;
+                        _file_page._cursor.X = 0;
+                    }
+                    else if (_file_page._cursor.X != _file_page._lines[_file_page._cursor.Y].Length)
                     {
                         _file_page._cursor.X++;
                     }
@@ -174,7 +233,11 @@ namespace Iv
                     if (_file_page._cursor.Y != 0)
                     {
                         _file_page._cursor.Y--;
-                        _file_page._cursor.X = (short)_file_page._lines[_file_page._cursor.Y].Length;
+
+                        if (_file_page._cursor.X > _file_page._lines[_file_page._cursor.Y].Length)
+                        {
+                            _file_page._cursor.X = (short)_file_page._lines[_file_page._cursor.Y].Length;
+                        }
                     }
                 }
                 else if (_key.Key == ConsoleKey.DownArrow)
@@ -182,7 +245,10 @@ namespace Iv
                     if (_file_page._cursor.Y != _file_page._lines.Count - 1)
                     {
                         _file_page._cursor.Y++;
-                        _file_page._cursor.X = (short)_file_page._lines[_file_page._cursor.Y].Length;
+                        if (_file_page._cursor.X > _file_page._lines[_file_page._cursor.Y].Length)
+                        {
+                            _file_page._cursor.X = (short)_file_page._lines[_file_page._cursor.Y].Length;
+                        }
                     }
                 }
                 else if ((_key.Modifiers == ConsoleModifiers.Shift) && _key.Key == ConsoleKey.Escape)
